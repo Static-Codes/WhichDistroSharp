@@ -1,0 +1,1 @@
+WhichDistroSharp is a unofficial .NET wrapper for @Which-Distro's `os-release` archive, allowing for easy platform detection in just one LoC!

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>WhichDistroSharp</RootNamespace>
+    <PackageId>WhichDistroSharp</PackageId>
+    <Title>WhichDistroSharp</Title>
+    <Description>Detect the Linux distribution your application is running on.</Description>
+    <Authors>WhichDistroSharp</Authors>
+    <PackageVersion>1.0.0</PackageVersion>
+  </PropertyGroup>
+
+</Project>
