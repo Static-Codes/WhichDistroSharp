@@ -1,5 +1,6 @@
 namespace WhichDistroSharp;
 
+/// <summary> A generic platform interface that will be inherited by each Distro member following source generation. </summary>
 public interface IPlatform
 {
     string Name { get; }
