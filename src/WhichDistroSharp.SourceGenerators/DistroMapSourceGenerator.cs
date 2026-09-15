@@ -336,6 +336,8 @@ public class DistroMapSourceGenerator : ISourceGenerator
             sb.AppendLine($"    public static bool Is{entry.EnumName}(this Distro distro) => distro == Distro.{entry.EnumName};");
         }
 
+        sb.AppendLine("    public static bool WasFound(this Distro distro) => distro != Distro.Unknown;");
+
         sb.AppendLine("}");
     }
 
