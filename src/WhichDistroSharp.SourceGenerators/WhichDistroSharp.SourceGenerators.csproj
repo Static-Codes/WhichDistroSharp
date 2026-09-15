@@ -16,6 +16,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <PackagePath>analyzers/dotnet/cs</PackagePath>
     <PackageType>Analyzer</PackageType>
+    <NoWarn>RS1035</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
