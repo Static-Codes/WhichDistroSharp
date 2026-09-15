@@ -125,31 +125,36 @@ public static class WhichDistroSharp
     public static Distro Detect()
     {
         string? osReleasePath = GetOsReleasePath();
-        if (osReleasePath != null && TryParseId(osReleasePath, out Distro distro))
-        {
+        if (osReleasePath != null && TryParseId(osReleasePath, out Distro distro)) {
             return distro;
         }
         return Distro.Ubuntu;
     }
 
+    private static PlatformData GetDefaultPlatformData()
+    {
+        #if NET6_0
+            return new PlatformData(Distro.Unknown, new());
+        #elif NET8_0_OR_GREATER
+            return new PlatformData(Distro.Unknown, []); 
+        #endif
+    }
+
     public static IPlatform DetectPlatform()
     {
         string? osReleasePath = GetOsReleasePath();
-        if (osReleasePath != null)
-        {
-            var fields = ParseOsRelease(osReleasePath);
-            string id = fields.GetValueOrDefault("ID") ?? "";
-            if (DistroMap.TryGetValue(id, out Distro distro)) {
-                return new PlatformData(distro, fields);
-            }
-        }
-        #if NET8_0_OR_GREATER
-            return new PlatformData(Distro.Unknown, []);
 
-        #elif NET6_0
-            return new PlatformData(Distro.Unknown, new());
+        if (osReleasePath == null) {
+            return GetDefaultPlatformData();
+        }
         
-        #endif
+        var fields = ParseOsRelease(osReleasePath);
+        string id = fields.GetValueOrDefault("ID") ?? "";
+
+        if (!DistroMap.TryGetValue(id, out Distro distro)) { 
+            return GetDefaultPlatformData();
+        }
+        return new PlatformData(distro, fields); 
     }
 
     private static string? GetOsReleasePath()
