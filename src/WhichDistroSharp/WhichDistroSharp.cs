@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.IO;
-
 namespace WhichDistroSharp;
 
 public static class WhichDistroSharp
@@ -73,8 +70,7 @@ public static class WhichDistroSharp
         { "nuros", Distro.Nuros },
         { "ol", Distro.Ol },
         { "omnios", Distro.Omnios },
-        { "openeuler", Distro.Openeuler },
-        { "openEuler", Distro.OpenEuler },
+        // { "openeuler", Distro.OpenEuler },
         { "openmandriva", Distro.Openmandriva },
         { "opensuse", Distro.Opensuse },
         { "opensuse-leap", Distro.OpensuseLeap },
@@ -148,10 +144,10 @@ public static class WhichDistroSharp
             }
         }
         #if NET8_0_OR_GREATER
-            return new PlatformData(Distro.Ubuntu, []);
+            return new PlatformData(Distro.Unknown, []);
 
         #elif NET6_0
-            return new PlatformData(Distro.Ubuntu, new());
+            return new PlatformData(Distro.Unknown, new());
         
         #endif
     }
@@ -170,8 +166,7 @@ public static class WhichDistroSharp
 
         foreach (string path in candidates)
         {
-            if (File.Exists(path))
-            {
+            if (File.Exists(path)) {
                 return path;
             }
         }

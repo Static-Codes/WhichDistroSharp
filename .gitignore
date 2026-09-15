@@ -1,3 +1,5 @@
 bin/*
 obj/*
 os-release-main/*
+src/*/bin/*
+src/*/obj/*

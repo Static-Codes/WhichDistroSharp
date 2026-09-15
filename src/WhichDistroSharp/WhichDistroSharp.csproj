@@ -8,7 +8,7 @@
     <PackageId>WhichDistroSharp</PackageId>
     <Title>WhichDistroSharp</Title>
     <Description>Detect the Linux distribution your application is running on.</Description>
-    <Authors>WhichDistroSharp</Authors>
+    <Authors>Static Codes</Authors>
     <PackageVersion>1.0.0</PackageVersion>
   </PropertyGroup>
 

@@ -1,5 +1,9 @@
 namespace WhichDistroSharp;
 
+/// <summary>
+/// Represents a distribution of linux. <br/>
+/// Pulled from https://github.com/which-distro/os-release/tree/main
+/// </summary>
 public enum Distro
 {
     Almalinux,
@@ -68,8 +72,7 @@ public enum Distro
     Nuros,
     Ol,
     Omnios,
-    Openeuler,
-    OpenEuler,
+    // OpenEuler,
     Openmandriva,
     Opensuse,
     OpensuseLeap,
@@ -120,4 +123,8 @@ public enum Distro
     Xenenterprise,
     Zorin,
     Unknown
+}
+
+public static class DistroHelpers {
+    public static bool WasFound(this Distro distro) => distro != Distro.Unknown;
 }
