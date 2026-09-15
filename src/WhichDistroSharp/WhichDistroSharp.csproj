@@ -12,4 +12,12 @@
     <PackageVersion>1.0.0</PackageVersion>
   </PropertyGroup>
 
+  <!-- Dynamically importing all source generators in WhichDistroSharp.SourceGenerators/*.cs -->
+  <ItemGroup>
+    <ProjectReference 
+      Include="../WhichDistroSharp.SourceGenerators/WhichDistroSharp.SourceGenerators.csproj" 
+      OutputItemType="Analyzer" 
+      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>

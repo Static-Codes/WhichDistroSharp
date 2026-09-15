@@ -3,3 +3,4 @@ obj/*
 os-release-main/*
 src/*/bin/*
 src/*/obj/*
+src/.vscode/*
