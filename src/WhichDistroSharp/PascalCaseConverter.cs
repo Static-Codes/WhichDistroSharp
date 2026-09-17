@@ -4,19 +4,21 @@ using System.Collections.Generic;
 using System.Text;
 
 public static class PascalCaseConverter
-{
-    // private static readonly Dictionary<string, string> KnownTerms = new(StringComparer.OrdinalIgnoreCase)
-    // {
-    //     { "linuxmint", "LinuxMint" },
-    // };
+{   
+    // Handling of non-canonical distro names.
+    // This is the only static logic in WhichDistroSharp; the remainder is handled through source-gen.
+    private static readonly Dictionary<string, string> KnownTerms = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "linuxmint", "LinuxMint" },
+    };
 
     public static string? ToPascalCase(string? input)
     {
         if (input is null) { return null; }
 
-        // if (KnownTerms.TryGetValue(input, out var known)) {
-        //     return known;
-        // }
+        if (KnownTerms.TryGetValue(input, out var known)) {
+            return known;
+        }
 
         var separators = new[] { '-', '_', ' ', '.', '/', '\\' };
         var parts = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
