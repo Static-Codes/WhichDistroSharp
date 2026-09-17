@@ -4,10 +4,14 @@ public static class WhichDistroSharp
 {
     public static Distro Detect()
     {
-        string? osReleasePath = GetOsReleasePath();
-        if (osReleasePath != null && TryParseId(osReleasePath, out Distro distro)) {
-            return distro;
+        try
+        {
+            string? osReleasePath = GetOsReleasePath();
+            if (osReleasePath != null && TryParseId(osReleasePath, out Distro distro)) {
+                return distro;
+            }
         }
+        catch { }
         return Distro.Unknown;
     }
 
@@ -22,19 +26,25 @@ public static class WhichDistroSharp
 
     public static IPlatform DetectPlatform()
     {
-        string? osReleasePath = GetOsReleasePath();
+        try
+        {
+            string? osReleasePath = GetOsReleasePath();
 
-        if (osReleasePath == null) {
+            if (osReleasePath == null) {
+                return GetDefaultPlatformData();
+            }
+
+            var fields = ParseOsRelease(osReleasePath);
+            string id = fields.GetValueOrDefault("ID") ?? "";
+
+            if (!DistroMap.Map.TryGetValue(id, out Distro distro)) {
+                return GetDefaultPlatformData();
+            }
+            return new PlatformData(distro, fields);
+        }
+        catch {
             return GetDefaultPlatformData();
         }
-        
-        var fields = ParseOsRelease(osReleasePath);
-        string id = fields.GetValueOrDefault("ID") ?? "";
-
-        if (!DistroMap.Map.TryGetValue(id, out Distro distro)) { 
-            return GetDefaultPlatformData();
-        }
-        return new PlatformData(distro, fields); 
     }
 
     private static string? GetOsReleasePath()
@@ -60,29 +70,41 @@ public static class WhichDistroSharp
 
     private static bool TryParseId(string path, out Distro distro)
     {
-        var fields = ParseOsRelease(path);
-        string id = fields.GetValueOrDefault("ID") ?? "";
-        return DistroMap.Map.TryGetValue(id, out distro);
+        try
+        {
+            var fields = ParseOsRelease(path);
+            string id = fields.GetValueOrDefault("ID") ?? "";
+            return DistroMap.Map.TryGetValue(id, out distro);
+        }
+        catch
+        {
+            distro = Distro.Unknown;
+            return false;
+        }
     }
 
     private static Dictionary<string, string> ParseOsRelease(string path)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string line in File.ReadLines(path))
+        try
         {
-            int eqIndex = line.IndexOf('=');
-            
-            if (eqIndex <= 0) { continue; }
+            foreach (string line in File.ReadLines(path))
+            {
+                int eqIndex = line.IndexOf('=');
 
-            string key = line[..eqIndex].Trim();
-            string value = line[(eqIndex + 1)..].Trim();
-            
-            if (value.StartsWith('"') && value.EndsWith('"') && value.Length >= 2) {
-                value = value[1..^1];
+                if (eqIndex <= 0) { continue; }
+
+                string key = line[..eqIndex].Trim();
+                string value = line[(eqIndex + 1)..].Trim();
+
+                if (value.StartsWith('"') && value.EndsWith('"') && value.Length >= 2) {
+                    value = value[1..^1];
+                }
+
+                result[key] = value;
             }
-            
-            result[key] = value;
         }
+        catch { }
         return result;
     }
 }
