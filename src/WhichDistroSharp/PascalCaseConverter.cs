@@ -16,9 +16,7 @@ public static class PascalCaseConverter
     {
         if (input is null) { return null; }
 
-        if (KnownTerms.TryGetValue(input, out var known)) {
-            return known;
-        }
+        if (KnownTerms.TryGetValue(input, out var known)) { return known; }
 
         var separators = new[] { '-', '_', ' ', '.', '/', '\\' };
         var parts = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);

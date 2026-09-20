@@ -1,5 +1,5 @@
 using WhichDistroSharp;
-using static global::WhichDistroSharp.WhichDistroSharp;
+using static WhichDistroSharp.WhichDistroSharp;
 
 Distro distro = Detect();
 
