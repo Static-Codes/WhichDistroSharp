@@ -4,14 +4,11 @@ public static class WhichDistroSharp
 {
     public static Distro Detect()
     {
-        try
-        {
+        try {
             string? osReleasePath = GetOsReleasePath();
-            if (osReleasePath != null && TryParseId(osReleasePath, out Distro distro)) {
-                return distro;
-            }
+            if (osReleasePath != null && TryParseId(osReleasePath, out Distro distro)) { return distro; }
         }
-        catch { }
+        catch (Exception ex) { Console.Error.Write(ex.Message); }
         return Distro.Unknown;
     }
 
@@ -30,19 +27,17 @@ public static class WhichDistroSharp
         {
             string? osReleasePath = GetOsReleasePath();
 
-            if (osReleasePath == null) {
-                return GetDefaultPlatformData();
-            }
+            if (osReleasePath == null) { return GetDefaultPlatformData(); }
 
             var fields = ParseOsRelease(osReleasePath);
             string id = fields.GetValueOrDefault("ID") ?? "";
 
-            if (!DistroMap.Map.TryGetValue(id, out Distro distro)) {
-                return GetDefaultPlatformData();
-            }
+            if (!DistroMap.Map.TryGetValue(id, out Distro distro)) { return GetDefaultPlatformData(); }
+
             return new PlatformData(distro, fields);
         }
-        catch {
+        catch (Exception ex) {
+            Console.WriteLine(ex.Message);
             return GetDefaultPlatformData();
         }
     }
@@ -59,25 +54,21 @@ public static class WhichDistroSharp
         #endif
         
 
-        foreach (string path in candidates)
-        {
-            if (File.Exists(path)) {
-                return path;
-            }
+        foreach (string path in candidates) {
+            if (File.Exists(path)) { return path; }
         }
         return null;
     }
 
     private static bool TryParseId(string path, out Distro distro)
     {
-        try
-        {
+        try {
             var fields = ParseOsRelease(path);
             string id = fields.GetValueOrDefault("ID") ?? "";
             return DistroMap.Map.TryGetValue(id, out distro);
         }
-        catch
-        {
+        
+        catch {
             distro = Distro.Unknown;
             return false;
         }
@@ -104,7 +95,7 @@ public static class WhichDistroSharp
                 result[key] = value;
             }
         }
-        catch { }
+        catch (Exception ex) { Console.Error.Write(ex.Message); }
         return result;
     }
 }
