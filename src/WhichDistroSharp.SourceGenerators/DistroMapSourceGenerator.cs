@@ -25,6 +25,17 @@ public class DistroMapSourceGenerator : ISourceGenerator
         "ID", "NAME", "VERSION_ID", "PRETTY_NAME", "HOME_URL", "BUG_REPORT_URL"
     };
 
+    private const string FedoraDistroId = "fedora";
+    private const string UbuntuDistroId = "ubuntu";
+
+    private static readonly string[] FedoraSpecificFields =
+    [
+        "PLATFORM_ID", "DEFAULT_HOSTNAME", "DOCUMENTATION_URL",
+        "REDHAT_BUGZILLA_PRODUCT", "REDHAT_BUGZILLA_PRODUCT_VERSION",
+        "REDHAT_SUPPORT_PRODUCT", "REDHAT_SUPPORT_PRODUCT_VERSION",
+        "SUPPORT_END", "VARIANT", "VARIANT_ID"
+    ];
+
     public void Initialize(GeneratorInitializationContext context) {}
 
     public void Execute(GeneratorExecutionContext context)
@@ -80,23 +91,32 @@ public class DistroMapSourceGenerator : ISourceGenerator
         return Path.GetDirectoryName(syntaxTree.FilePath);
     }
 
+    private bool IsNotRepoArtifact(string filePath)
+    {
+        string[] artifacts = ["README.md", "LICENSE", ".gitignore"];
+        return !artifacts.Contains(Path.GetFileName(filePath), StringComparer.OrdinalIgnoreCase);
+    }
+
     private List<DistroEntry> ParseDistros(string distrosPath, GeneratorExecutionContext context)
     {
         var entries = new List<DistroEntry>();
         var seenEnumNames = new HashSet<string>();
-        var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var dir in Directory.GetDirectories(distrosPath))
         {
             var dirName = Path.GetFileName(dir);
             var files = Directory.GetFiles(dir)
-                .Where(f => Path.GetFileName(f) != "README.md" && Path.GetFileName(f) != "LICENSE")
-                .ToArray();
+                                 .Where(f => IsNotRepoArtifact(f))
+                                 .ToArray();
 
-            if (files.Length == 0) { continue; }
+            if (files.Length == 0)
+            {
+                files = [.. FindFilesRecursive(dir).Where(f => IsNotRepoArtifact(f))];
+                if (files.Length == 0) { continue; }
+            }
 
             var osReleaseFile = files.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f) == dirName)
-                                ?? files[0];
+                                ?? SelectLatestVersionFile(files);
 
             Dictionary<string, string> fields;
 
@@ -105,18 +125,16 @@ public class DistroMapSourceGenerator : ISourceGenerator
             catch (Exception ex)
             {
                 ReportDiagnostic(
-                    context, 
-                    "DSG005", 
+                    context,
+                    "DSG005",
                     "DistroMapSourceGenerator",
-                    $"Failed to parse {osReleaseFile}: {ex.Message}", 
+                    $"Failed to parse {osReleaseFile}: {ex.Message}",
                     DiagnosticSeverity.Warning
                 );
                 continue;
             }
 
             if (!fields.TryGetValue("ID", out var id)) { continue; }
-
-            if (!seenIds.Add(id)) { continue; }
 
             var enumName = ToPascalCase(dirName);
 
@@ -134,6 +152,50 @@ public class DistroMapSourceGenerator : ISourceGenerator
         );
 
         return entries;
+    }
+
+    private static string[] FindFilesRecursive(string directory)
+    {
+        var result = new List<string>();
+        try
+        {
+            result.AddRange(Directory.GetFiles(directory));
+            foreach (var subdir in Directory.GetDirectories(directory))
+            {
+                result.AddRange(FindFilesRecursive(subdir));
+            }
+        }
+        catch { }
+        result.Sort(StringComparer.Ordinal);
+        return [.. result];
+    }
+
+    private static string SelectLatestVersionFile(string[] files)
+    {
+        var versionFiles = new List<(string path, double version)>();
+        var nonVersionFiles = new List<string>();
+
+        foreach (var file in files)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(file);
+            if (double.TryParse(fileName, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var version))
+            {
+                versionFiles.Add((file, version));
+            }
+            else
+            {
+                nonVersionFiles.Add(file);
+            }
+        }
+
+        if (versionFiles.Count > 0)
+        {
+            versionFiles.Sort((a, b) => b.version.CompareTo(a.version));
+            return versionFiles[0].path;
+        }
+
+        nonVersionFiles.Sort(StringComparer.Ordinal);
+        return nonVersionFiles[0];
     }
 
     private static Dictionary<string, string> ParseOsRelease(string path)
@@ -173,16 +235,31 @@ public class DistroMapSourceGenerator : ISourceGenerator
         return result;
     }
 
-    private static string ToPascalCase(string input)
+    // private static readonly Dictionary<string, string> KnownPascalCaseTerms = new(StringComparer.OrdinalIgnoreCase)
+    // {
+    //     { "linuxmint", "LinuxMint" },
+    // };
+
+    private static string ToPascalCase(string? input)
     {
-        var parts = input.Split(['-', '_', ' ', '.', '/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+        if (string.IsNullOrEmpty(input)) { return ""; }
+
+        // if (KnownPascalCaseTerms.TryGetValue(input!, out var known)) {
+        //     return known;
+        // }
+
+        var parts = input!.Split(['-', '_', ' ', '.', '/', '\\'], StringSplitOptions.RemoveEmptyEntries);
         var result = new StringBuilder();
+
         foreach (var part in parts)
         {
-            if (part.Length == 0) continue;
+            if (part.Length == 0) { continue; }
+
             result.Append(char.ToUpper(part[0]));
-            if (part.Length > 1) result.Append(part.Substring(1));
+
+            if (part.Length > 1) { result.Append(part.Substring(1)); }
         }
+
         return result.ToString();
     }
 
@@ -237,10 +314,11 @@ public class DistroMapSourceGenerator : ISourceGenerator
         sb.AppendLine("/// </summary>");
         sb.AppendLine("public enum Distro");
         sb.AppendLine("{");
-        foreach (var entry in distros)
-        {
+        
+        foreach (var entry in distros) {
             sb.AppendLine($"    {entry.EnumName},");
         }
+
         sb.AppendLine("}");
     }
 
@@ -274,9 +352,11 @@ public class DistroMapSourceGenerator : ISourceGenerator
         sb.AppendLine("    /// </summary>");
         sb.AppendLine("    public static readonly Dictionary<string, Distro> Map = new(StringComparer.OrdinalIgnoreCase)");
         sb.AppendLine("    {");
+        var seenMapIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in distros)
         {
-            if (entry.EnumName == "Unknown") continue;
+            if (entry.EnumName == "Unknown") { continue; }
+            if (!seenMapIds.Add(entry.Id)) { continue; }
             sb.AppendLine($"        {{ \"{entry.Id}\", Distro.{entry.EnumName} }},");
         }
         sb.AppendLine("    };");
@@ -285,16 +365,29 @@ public class DistroMapSourceGenerator : ISourceGenerator
 
     private static void GenerateDistroInfoClass(StringBuilder sb, DistroEntry entry)
     {
+        bool isFedora = entry.Id.Equals(FedoraDistroId, StringComparison.OrdinalIgnoreCase);
+        string className = isFedora ? "FedoraDistroInfo" : $"{entry.EnumName}Info";
+
         sb.AppendLine($"/// <summary>");
         sb.AppendLine($"/// OS-release information for {entry.EnumName}.");
         sb.AppendLine($"/// </summary>");
-        sb.AppendLine($"public sealed class {entry.EnumName}Info : IOsRelease");
+        sb.AppendLine($"public sealed class {className} : IOsRelease");
         sb.AppendLine("{");
 
         foreach (var field in OsReleaseSpecFields)
         {
             var value = entry.Fields.TryGetValue(field, out var v) ? EscapeString(v) : "";
             sb.AppendLine($"    public string {field} => \"{value}\";");
+        }
+
+        if (isFedora)
+        {
+            sb.AppendLine();
+            foreach (var field in FedoraSpecificFields)
+            {
+                var value = entry.Fields.TryGetValue(field, out var v) ? EscapeString(v) : "";
+                sb.AppendLine($"    public string {field} => \"{value}\";");
+            }
         }
 
         sb.AppendLine("}");
@@ -315,7 +408,8 @@ public class DistroMapSourceGenerator : ISourceGenerator
         foreach (var entry in distros)
         {
             if (entry.EnumName == "Unknown") continue;
-            sb.AppendLine($"        Distro.{entry.EnumName} => new {entry.EnumName}Info(),");
+            string className = entry.Id.Equals(FedoraDistroId, StringComparison.OrdinalIgnoreCase) ? "FedoraDistroInfo" : $"{entry.EnumName}Info";
+            sb.AppendLine($"        Distro.{entry.EnumName} => new {className}(),");
         }
         sb.AppendLine("        _ => null");
         sb.AppendLine("    };");
@@ -330,9 +424,14 @@ public class DistroMapSourceGenerator : ISourceGenerator
         sb.AppendLine("public static class DistroIsExtensions");
         sb.AppendLine("{");
 
+        sb.AppendLine("    public static bool IsUbuntu(this Distro distro) => distro == Distro.Ubuntu;");
+        sb.AppendLine("    public static bool IsFedora(this Distro distro) => distro == Distro.Fedora;");
+
         foreach (var entry in distros)
         {
             if (entry.EnumName == "Unknown") continue;
+            if (entry.Id.Equals(FedoraDistroId, StringComparison.OrdinalIgnoreCase)) continue;
+            if (entry.Id.Equals(UbuntuDistroId, StringComparison.OrdinalIgnoreCase)) continue;
             sb.AppendLine($"    public static bool Is{entry.EnumName}(this Distro distro) => distro == Distro.{entry.EnumName};");
         }
 
@@ -341,8 +440,7 @@ public class DistroMapSourceGenerator : ISourceGenerator
         sb.AppendLine("}");
     }
 
-    private static string EscapeString(string value)
-    {
+    private static string EscapeString(string value) {
         return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 
@@ -354,19 +452,11 @@ public class DistroMapSourceGenerator : ISourceGenerator
         Debug.Print(message);
     }
 
-    private class DistroEntry
+    private class DistroEntry(string dirName, string id, string enumName, Dictionary<string, string> fields)
     {
-        public string DirName { get; }
-        public string Id { get; }
-        public string EnumName { get; }
-        public Dictionary<string, string> Fields { get; }
-
-        public DistroEntry(string dirName, string id, string enumName, Dictionary<string, string> fields)
-        {
-            DirName = dirName;
-            Id = id;
-            EnumName = enumName;
-            Fields = fields;
-        }
+        public string DirName { get; } = dirName;
+        public string Id { get; } = id;
+        public string EnumName { get; } = enumName;
+        public Dictionary<string, string> Fields { get; } = fields;
     }
 }

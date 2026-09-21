@@ -1,6 +1,11 @@
 bin/*
 obj/*
-os-release-main/*
-src/*/bin/*
-src/*/obj/*
-src/.vscode/*
+.kilo
+.vscode
+src/*/bin
+src/*/obj
+src/.kilo
+src/.vscode
+
+examples/*/bin/*
+examples/*/obj/*

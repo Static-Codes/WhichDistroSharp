@@ -8,7 +8,7 @@ namespace WhichDistroSharp;
         public PlatformData(Distro distro, Dictionary<string, string> fields)
         {
             Distro = distro;
-            _fields = fields;
+            _fields = fields ?? new Dictionary<string, string>();
         }
 
         public Distro Distro { get; }
@@ -30,7 +30,7 @@ namespace WhichDistroSharp;
 #elif NET8_0_OR_GREATER
     internal sealed class PlatformData(Distro distro, Dictionary<string, string> fields) : IPlatform
     {
-        private readonly Dictionary<string, string> _fields = fields;
+        private readonly Dictionary<string, string> _fields = fields ?? [];
 
         public Distro Distro { get; } = distro;
         public string Name => _fields.GetValueOrDefault("NAME") ?? "";
@@ -46,6 +46,6 @@ namespace WhichDistroSharp;
         public string? PrivacyPolicyUrl => _fields.GetValueOrDefault("PRIVACY_POLICY_URL");
         public string? VersionCodename => _fields.GetValueOrDefault("VERSION_CODENAME");
         public string? CpeName => _fields.GetValueOrDefault("CPE_NAME");
-    }     
-        
+    }
+
 #endif
