@@ -21,11 +21,11 @@ jobs:
       - name: Run Tests and Pack
         run: |
           # Changing dirs to the tests directory and run
-          cd WhichDistroSharp.Tests
+          cd src/WhichDistroSharp.Tests
           dotnet run
           
           # Moving back to root and then to the library directory
-          cd ../WhichDistroSharp
+          cd src/WhichDistroSharp
           
           # Packing the package
           dotnet pack --configuration Release /p:VersionPrefix=1.0.0
