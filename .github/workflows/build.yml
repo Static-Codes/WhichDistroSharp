@@ -1,0 +1,44 @@
+name: Build and push NuGet package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run Tests and Pack
+        run: |
+          # Changing dirs to the tests directory and run
+          cd WhichDistroSharp.Tests
+          dotnet run
+          
+          # Moving back to root and then to the library directory
+          cd ../WhichDistroSharp
+          
+          # Packing the package
+          dotnet pack --configuration Release /p:VersionPrefix=1.0.0
+          
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: NuGet push
+        run: |
+          # Pushes the package created in the previous step
+          dotnet nuget push **/*.nupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json
