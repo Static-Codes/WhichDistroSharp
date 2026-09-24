@@ -1,5 +1,8 @@
 WhichDistroSharp is a unofficial .NET wrapper for [Which-Distro](https://github.com/which-distro)'s [os-release](https://github.com/which-distro/os-release) archive, allowing for easy platform detection in just one LoC!
 
+## Supported Distros
+
+For a list of supported distos, click [here](./src/WhichDistroSharp/Distros)
 
 ## Basic Usage (Detects distro name only)
 
