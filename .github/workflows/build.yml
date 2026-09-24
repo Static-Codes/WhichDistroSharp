@@ -4,7 +4,33 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        include:
+          - framework: net6.0
+            dotnet: 6.0.x
+          - framework: net8.0
+            dotnet: 8.0.x
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ matrix.dotnet }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+
+      - name: Run Tests
+        run: |
+          cd src/WhichDistroSharp.Tests
+          dotnet run -f ${{ matrix.framework }}
+
   build-and-publish:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -18,16 +44,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Run Tests and Pack
+      - name: Pack the package
         run: |
-          # Changing dirs to the tests directory and run
-          cd src/WhichDistroSharp.Tests
-          dotnet run
-          
-          # Moving back to root and then to the library directory
           cd src/WhichDistroSharp
-          
-          # Packing the package
           dotnet pack --configuration Release /p:VersionPrefix=1.0.0
           
       - name: NuGet login
@@ -38,7 +57,6 @@ jobs:
 
       - name: NuGet push
         run: |
-          # Pushes the package created in the previous step
           dotnet nuget push **/*.nupkg \
             --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
             --source https://api.nuget.org/v3/index.json
