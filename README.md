@@ -23,24 +23,16 @@ Console.WriteLine($"Was Found: {distro.WasFound()}");
 using WhichDistroSharp;
 using static WhichDistroSharp.WhichDistroSharp;
 
-// Distro detection
+// Detecting the current distro.
 Distro distro = Detect();
-
-Console.WriteLine($"Detected Distro: {distro}");
-Console.WriteLine($"Was Found: {distro.WasFound()}");
-Console.WriteLine();
 
 if (!distro.WasFound()) {
     Console.Error.WriteLine("Failed to detect the linux distro running on the current machine");
     Environment.Exit(1);
 }
 
-// Parsing /etc/os-release
-IPlatform platform = DetectPlatform();
-Console.WriteLine($"Name: {platform.Name}");
-Console.WriteLine($"ID: {platform.Id}");
-Console.WriteLine($"Version: {platform.VersionId}");
-Console.WriteLine($"Pretty Name: {platform.PrettyName}");
+Console.WriteLine($"Detected Distro: {distro}");
+Console.WriteLine($"Was Found: {distro.WasFound()}");
 Console.WriteLine();
 
 // Each distro object has source generated Is* methods, where * represents a distro name.
@@ -49,6 +41,7 @@ Console.WriteLine($"Is Ubuntu: {distro.IsUbuntu()}");
 Console.WriteLine($"Is Fedora: {distro.IsFedora()}");
 Console.WriteLine();
 
+// Method 1: Parsing the /etc/os-release file for the current distro.
 IOsRelease? info = OsReleaseInfo.GetInfo(distro);
 
 if (info == null) {
@@ -56,8 +49,22 @@ if (info == null) {
     Environment.Exit(1);
 }
 
+// Displaying OS Release info 
 Console.WriteLine($"OS Release Info:");
 Console.WriteLine($"  Name: {info.NAME}");
 Console.WriteLine($"  Version: {info.VERSION_ID}");
 Console.WriteLine($"  Pretty Name: {info.PRETTY_NAME}");
+
+
+
+// Method 2: Parsing /etc/os-release without specifying a distro.
+// This is mostly used for debugging purposes, although it may fit your specific needs.
+IPlatform platform = DetectPlatform();
+Console.WriteLine($"Name: {platform.Name}");
+Console.WriteLine($"ID: {platform.Id}");
+Console.WriteLine($"Version: {platform.VersionId}");
+Console.WriteLine($"Pretty Name: {platform.PrettyName}");
+Console.WriteLine();
+
+
 ```
