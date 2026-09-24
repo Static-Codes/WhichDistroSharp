@@ -40,6 +40,7 @@ Console.WriteLine($"Version: {platform.VersionId}");
 Console.WriteLine($"Pretty Name: {platform.PrettyName}");
 Console.WriteLine();
 
+// Each distro object has source generated Is* methods, where * represents a distro name.
 Console.WriteLine($"Is Linux Mint: {distro.IsLinuxmint()}");
 Console.WriteLine($"Is Ubuntu: {distro.IsUbuntu()}");
 Console.WriteLine($"Is Fedora: {distro.IsFedora()}");
